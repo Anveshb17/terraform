@@ -2,13 +2,13 @@ provider "aws" {
   access_key = var.AWS_ACCESS_KEY
   secret_key = var.AWS_SECRET_KEY
   region = var.AWS_REGION
-}
 
 resource "aws_vpc" "xwiggy-vpc" {
   cidr_block = "10.0.0.0/16"
   tags = {
     Name = "teraform-xwiggy-vpc"
   }
+
 }
 
 resource "aws_subnet" "public-subnet" {
@@ -58,5 +58,5 @@ resource "aws_security_group" "public-security-group" {
   }
   tags = {
     Name = "xwiggy-public-security-group"
+
   }
-}
