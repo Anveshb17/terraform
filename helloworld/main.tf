@@ -91,8 +91,9 @@ resource "aws_nat_gateway" "ngw" {
     vpc_id = aws_vpc.xwiggy-vpc.id
     ingress {
       from_port = 0
-      protocol = ""
+      protocol = "-1"
       to_port = 0
+      cidr_blocks = ["10.0.0.0/16"]
     }
     egress {
       from_port = 0
@@ -104,6 +105,25 @@ resource "aws_nat_gateway" "ngw" {
       Name = "xwiggy-public-security-group"
     }
   }
+  resource "aws_security_group" "private-security-group" {
+    name = "xwiggy-private-secuty-group"
+    vpc_id = aws_vpc.xwiggy-vpc.id
+    ingress {
+      from_port = 0
+      protocol = "-1"
+      to_port = 0
+      cidr_blocks = ["10.0.0.0/16"]
+    }
+    egress {
+      from_port = 0
+      protocol = "-1"
+      to_port = 0
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+    tags = {
+      Name = "xwiggy-private-security-group"
+    }
+  }
  resource "aws_instance" "instance" {
   ami = "ami-0aeeebd8d2ab47354"
   instance_type  = "t2.micro"
@@ -112,6 +132,53 @@ resource "aws_nat_gateway" "ngw" {
   associate_public_ip_address = true
   key_name = "NVkey"
   tags = {
-    Name = "Test"
+    Name = "Web"
+  }
+}
+
+resource "aws_security_group_rule" "my_ip_whitelist" {
+  from_port = 22
+  protocol = "tcp"
+  security_group_id = aws_security_group.public-security-group.id
+  to_port = 22
+  type = "ingress"
+  cidr_blocks = ["49.207.119.12/32"]
+}
+resource "aws_security_group_rule" "http" {
+  from_port = 80
+  protocol = "tcp"
+  security_group_id = aws_security_group.public-security-group.id
+  to_port = 80
+  type = "ingress"
+  cidr_blocks = ["0.0.0.0/0"]
+}
+resource "aws_security_group_rule" "private" {
+  from_port = 8080
+  protocol = "tcp"
+  security_group_id = aws_security_group.private-security-group.id
+  to_port = 8080
+  type = "ingress"
+  cidr_blocks = ["0.0.0.0/0"]
+}
+resource "aws_instance" "AppServer" {
+  ami = "ami-0aeeebd8d2ab47354"
+  instance_type  = "t2.micro"
+  subnet_id      = aws_subnet.private-subnet.id
+  vpc_security_group_ids = [aws_security_group.private-security-group.id]
+  associate_public_ip_address = false
+  key_name = "NVkey"
+  tags = {
+    Name = "Backend"
+  }
+}
+resource "aws_instance" "DBServer" {
+  ami = "ami-0aeeebd8d2ab47354"
+  instance_type  = "t2.micro"
+  subnet_id      = aws_subnet.private-subnet.id
+  vpc_security_group_ids = [aws_security_group.private-security-group.id]
+  associate_public_ip_address = false
+  key_name = "NVkey"
+  tags = {
+    Name = "DB"
   }
 }
